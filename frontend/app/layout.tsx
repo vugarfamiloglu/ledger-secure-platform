@@ -11,7 +11,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    /* suppressHydrationWarning is required because the inline
+     * anti-flash script below mutates <html class="…"> before React
+     * hydrates.  The flag only suppresses the warning for <html>'s
+     * own attributes — child mismatches still warn as normal. */
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Avoid theme flash. */}
         <script dangerouslySetInnerHTML={{ __html: `
