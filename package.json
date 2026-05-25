@@ -1,0 +1,42 @@
+{
+  "name": "ledger-secure-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bank-grade double-entry payment infrastructure — Stripe Treasury / Modern Treasury level. Six microservices (ledger, payments, fx, reconciliation, fraud, webhook) + a Next.js 15 SSR back-office dashboard, all communicating through a typed event bus with idempotency, HMAC-signed webhooks and an immutable journal.",
+  "scripts": {
+    "dev": "tsx scripts/start-all.ts",
+    "dev:frontend":       "next dev frontend -p 5110",
+    "dev:ledger":         "tsx services/ledger/index.ts",
+    "dev:payments":       "tsx services/payments/index.ts",
+    "dev:fx":             "tsx services/fx/index.ts",
+    "dev:reconciliation": "tsx services/reconciliation/index.ts",
+    "dev:fraud":          "tsx services/fraud/index.ts",
+    "dev:webhook":        "tsx services/webhook/index.ts",
+    "build":  "next build frontend",
+    "start":  "tsx scripts/start-all.ts",
+    "seed":   "tsx scripts/seed.ts",
+    "smoke":  "tsx scripts/smoke.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.5.0",
+    "express": "^4.21.1",
+    "jose": "^5.9.6",
+    "next": "15.0.3",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
