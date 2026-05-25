@@ -7,6 +7,37 @@ import { serviceUrl, type ServiceName } from '@/lib/server';
 
 const ALLOWED: ServiceName[] = ['ledger', 'payments', 'fx', 'reconciliation', 'fraud', 'webhook'];
 
+const PORT_FOR: Record<ServiceName, string> = {
+  ledger:         process.env.LEDGER_LEDGER_PORT         ?? '5111',
+  payments:       process.env.LEDGER_PAYMENTS_PORT       ?? '5112',
+  fx:             process.env.LEDGER_FX_PORT             ?? '5113',
+  reconciliation: process.env.LEDGER_RECONCILIATION_PORT ?? '5114',
+  fraud:          process.env.LEDGER_FRAUD_PORT          ?? '5115',
+  webhook:        process.env.LEDGER_WEBHOOK_PORT        ?? '5116',
+};
+
+/* Diagnose a fetch failure and produce an operator-actionable message.
+ * Node's fetch wraps the OS-level error in `e.cause` — connect refusals
+ * come back as { code: 'ECONNREFUSED' }, timeouts as { code: 'UND_ERR_…' }
+ * etc.  We dig those out and explain what they mean. */
+function describeFetchFailure(service: ServiceName, e: any): string {
+  const port = PORT_FOR[service];
+  const code = e?.cause?.code ?? e?.code;
+  if (code === 'ECONNREFUSED') {
+    return `${service} service is not reachable on port ${port} — start it with "npm run dev:${service}" (or "npm run dev" to boot everything).`;
+  }
+  if (code === 'ETIMEDOUT' || code === 'UND_ERR_CONNECT_TIMEOUT') {
+    return `${service} service on port ${port} timed out — it may be overloaded or stuck.`;
+  }
+  if (code === 'ECONNRESET') {
+    return `${service} service on port ${port} dropped the connection mid-request — check its logs for a crash.`;
+  }
+  if (code === 'ENOTFOUND') {
+    return `cannot resolve hostname for ${service} (${port}) — check LEDGER_${service.toUpperCase()}_PORT in .env.local.`;
+  }
+  return `gateway → ${service} (port ${port}): ${e?.message ?? 'unreachable'}${code ? ` [${code}]` : ''}`;
+}
+
 async function proxy(req: NextRequest, ctx: { params: Promise<{ service: string; path: string[] }> }) {
   const { service, path } = await ctx.params;
   if (!ALLOWED.includes(service as ServiceName)) {
@@ -37,7 +68,9 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ service: string;
       headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' },
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: `gateway ${service}: ${e?.message ?? 'unreachable'}` }), {
+    const message = describeFetchFailure(service as ServiceName, e);
+    console.warn(`[gateway] ${req.method} /${subPath} → ${service} failed:`, message);
+    return new Response(JSON.stringify({ error: message }), {
       status: 502, headers: { 'Content-Type': 'application/json' },
     });
   }
